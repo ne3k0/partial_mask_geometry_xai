@@ -1,7 +1,7 @@
 """
 data_extract.py — STFT perturbation sweep for partial mask geometry analysis.
 
-Always saves: original + FOC sigmoid anchors, per-mask sigmoid probs + occ_fracs, samples.csv, summary.csv.
+Always saves: original + FOC sigmoid probs, per-mask sigmoid probs + occ_fracs, samples.csv, summary.csv.
 Optional (all on by default): --no-layers, --no-attribution, --no-masks.
 Masks are deterministic and shared across fills.
 
