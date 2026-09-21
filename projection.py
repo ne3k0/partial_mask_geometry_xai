@@ -6,9 +6,9 @@ Usage:
     python projection.py ... --model panns_no_specaug --class bagpipes --fills zero mean
 
 Supports two extraction formats (auto-detected per class directory):
-  legacy  {clip}_original.npy, {clip}_fully_occluded_{fill}.npy,
+  legacy  {clip}_original_logits.npy, {clip}_fully_occluded_{fill}_logits.npy,
           {clip}_perturbations_{fill}.npz  (keys: logits, occ_fracs)
-          NOTE: 'logits' key contains sigmoid confidences despite the name.
+          NOTE: all three 'logits' sources are sigmoid confidences despite the name.
   new     {clip}_original_sigmoid.npy, {clip}_foc_{fill}.npy,
           {clip}_perturb_{fill}.npy, {clip}_perturbations_{fill}.npz
 """
@@ -71,11 +71,12 @@ def _detect_format(embs_dir):
 def _load_legacy(embs_dir, clip_id, fill):
     """Load from legacy Apocrita format.
 
-    Files use misleading '_logits' / 'logits' naming but contain sigmoid
-    confidences — to_logit() is applied to all three arrays.
+    Each condition has two files: *.npy (768-dim embedding) and *_logits.npy
+    (527-dim sigmoid confidences — misleadingly named). We use the _logits
+    variants throughout; to_logit() converts them to true logit space.
     """
-    orig_p = os.path.join(embs_dir, f"{clip_id}_original.npy")
-    foc_p  = os.path.join(embs_dir, f"{clip_id}_fully_occluded_{fill}.npy")
+    orig_p = os.path.join(embs_dir, f"{clip_id}_original_logits.npy")
+    foc_p  = os.path.join(embs_dir, f"{clip_id}_fully_occluded_{fill}_logits.npy")
     pert_p = os.path.join(embs_dir, f"{clip_id}_perturbations_{fill}.npz")
     if not os.path.exists(orig_p) or not os.path.exists(foc_p) or not os.path.exists(pert_p):
         return None
