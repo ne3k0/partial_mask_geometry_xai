@@ -8,7 +8,7 @@ import pandas as pd
 
 # audioset_tagging_cnn must be cloned and its pytorch/ directory added to the path.
 # See: https://github.com/qiuqiangkong/audioset_tagging_cnn
-sys.path.insert(0, os.path.join(os.path.expanduser("~"), "audioset_tagging_cnn", "pytorch"))
+sys.path.insert(0, os.path.join(os.path.expanduser("~"), "freqrex", "audioset_tagging_cnn", "pytorch"))
 from models import Cnn14_no_specaug
 
 classes_num = 527
