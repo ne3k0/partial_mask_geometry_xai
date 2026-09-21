@@ -14,7 +14,7 @@ for model in ['panns_specaug_trained', 'panns_no_specaug', 'ast_wrapper']:
 
     old_orig = np.load(os.path.join(old, f'{clip}_original_logits.npy'))
     new_orig = np.load(os.path.join(new, f'{clip}_original_sigmoid.npy'))
-    print(f'  original sigmoid : allclose={np.allclose(old_orig, new_orig, atol=1e-6)}')
+    print(f'  original sigmoid : maxdiff={np.abs(old_orig - new_orig).max():.2e}')
 
     for fill in fills:
         old_npz = np.load(os.path.join(old, f'{clip}_perturbations_{fill}.npz'))
@@ -24,7 +24,7 @@ for model in ['panns_specaug_trained', 'panns_no_specaug', 'ast_wrapper']:
         new_foc = np.load(os.path.join(new, f'{clip}_foc_{fill}.npy'))
 
         occ = np.array_equal(old_npz['occ_fracs'], new_npz['occ_fracs'])
-        sig = np.allclose(old_npz['logits'], new_sig, atol=1e-6)
-        foc = np.allclose(old_foc, new_foc, atol=1e-6)
+        sig_diff = np.abs(old_npz['logits'] - new_sig).max()
+        foc_diff = np.abs(old_foc - new_foc).max()
 
-        print(f'  [{fill:14s}] occ_fracs={occ}  sigmoid={sig}  foc={foc}')
+        print(f'  [{fill:14s}] occ_fracs={occ}  sigmoid_maxdiff={sig_diff:.2e}  foc_maxdiff={foc_diff:.2e}')
