@@ -63,51 +63,60 @@ def _valid(path):
 def _detect_format(embs_dir):
     """Return 'legacy' if old extraction format is present, else 'new'."""
     files = os.listdir(embs_dir)
-    if any(f.endswith("_original.npy") for f in files):
+    if any(f.endswith("_original_logits.npy") for f in files):
         return "legacy"
     return "new"
 
 
-def _load_legacy(embs_dir, clip_id, fill):
-    """Load from legacy Apocrita format.
+def _load_orig(embs_dir, clip_id, fmt):
+    """Load and logit-transform the original clip's sigmoid output. Returns None if missing."""
+    suffix = "_original_logits.npy" if fmt == "legacy" else "_original_sigmoid.npy"
+    p = os.path.join(embs_dir, f"{clip_id}{suffix}")
+    if not os.path.exists(p):
+        return None
+    return to_logit(np.load(p, allow_pickle=False))
 
-    Each condition has two files: *.npy (768-dim embedding) and *_logits.npy
-    (527-dim sigmoid confidences — misleadingly named). We use the _logits
-    variants throughout; to_logit() converts them to true logit space.
+
+def _load_fill_legacy(embs_dir, clip_id, fill):
+    """Load FOC + perturbation data from legacy Apocrita format.
+
+    Files use misleading '_logits' / 'logits' naming but contain sigmoid
+    confidences — to_logit() is applied to all arrays.
     """
-    orig_p = os.path.join(embs_dir, f"{clip_id}_original_logits.npy")
     foc_p  = os.path.join(embs_dir, f"{clip_id}_fully_occluded_{fill}_logits.npy")
     pert_p = os.path.join(embs_dir, f"{clip_id}_perturbations_{fill}.npz")
-    if not os.path.exists(orig_p) or not os.path.exists(foc_p) or not os.path.exists(pert_p):
+    if not os.path.exists(foc_p) or not os.path.exists(pert_p):
         return None
-    z_orig = to_logit(np.load(orig_p, allow_pickle=False))
-    z_foc  = to_logit(np.load(foc_p,  allow_pickle=False))
+    z_foc = to_logit(np.load(foc_p, allow_pickle=False))
     with np.load(pert_p) as npz:
         Z   = to_logit(npz["logits"])          # sigmoid despite name
         ret = (1.0 - npz["occ_fracs"]).astype(np.float32)
-    return z_orig, z_foc, Z, ret
+    return z_foc, Z, ret
 
 
-def _load_new(embs_dir, clip_id, fill):
-    """Load from new data_extract.py format."""
-    orig_p = os.path.join(embs_dir, f"{clip_id}_original_sigmoid.npy")
+def _load_fill_new(embs_dir, clip_id, fill):
+    """Load FOC + perturbation data from new data_extract.py format."""
     foc_p  = os.path.join(embs_dir, f"{clip_id}_foc_{fill}.npy")
     per_p  = os.path.join(embs_dir, f"{clip_id}_perturb_{fill}.npy")
     pert_p = os.path.join(embs_dir, f"{clip_id}_perturbations_{fill}.npz")
-    if not os.path.exists(orig_p) or not os.path.exists(foc_p) \
-            or not os.path.exists(per_p) or not os.path.exists(pert_p):
+    if not os.path.exists(foc_p) or not os.path.exists(per_p) or not os.path.exists(pert_p):
         return None
-    z_orig = to_logit(np.load(orig_p, allow_pickle=False))
-    z_foc  = to_logit(np.load(foc_p,  allow_pickle=False))
-    Z      = to_logit(np.load(per_p,  allow_pickle=False))
+    z_foc = to_logit(np.load(foc_p,  allow_pickle=False))
+    Z     = to_logit(np.load(per_p,  allow_pickle=False))
     with np.load(pert_p) as npz:
         ret = (1.0 - npz["occ_fracs"]).astype(np.float32)
-    return z_orig, z_foc, Z, ret
+    return z_foc, Z, ret
 
 
 def process_clip(embs_dir, clip_id, dest_dir, fills, fmt):
-    counts = dict(saved=0, skipped=0, degenerate=0, errors=0)
-    loader = _load_legacy if fmt == "legacy" else _load_new
+    counts      = dict(saved=0, skipped=0, degenerate=0, errors=0)
+    fill_loader = _load_fill_legacy if fmt == "legacy" else _load_fill_new
+
+    z_orig = _load_orig(embs_dir, clip_id, fmt)
+    if z_orig is None:
+        print(f"  MISSING orig: {clip_id}")
+        counts["errors"] += len(fills)
+        return counts
 
     for fill in fills:
         out = os.path.join(dest_dir, f"{clip_id}_{fill}.npz")
@@ -118,12 +127,12 @@ def process_clip(embs_dir, clip_id, dest_dir, fills, fmt):
             os.remove(out)
 
         try:
-            data = loader(embs_dir, clip_id, fill)
-            if data is None:
+            fill_data = fill_loader(embs_dir, clip_id, fill)
+            if fill_data is None:
                 print(f"  MISSING {clip_id}/{fill}")
                 counts["errors"] += 1
                 continue
-            z_orig, z_foc, Z, ret = data
+            z_foc, Z, ret = fill_data
             if len(ret) != len(Z):
                 raise ValueError(f"occ_fracs length {len(ret)} != Z length {len(Z)} — partial write?")
             result = project(z_orig, z_foc, Z)
@@ -167,7 +176,7 @@ def main():
             os.makedirs(dest_dir, exist_ok=True)
 
             fmt    = _detect_format(embs_dir)
-            suffix = "_original.npy" if fmt == "legacy" else "_original_sigmoid.npy"
+            suffix = "_original_logits.npy" if fmt == "legacy" else "_original_sigmoid.npy"
             clips  = sorted(f[:-len(suffix)] for f in os.listdir(embs_dir) if f.endswith(suffix))
             if not clips:
                 continue
