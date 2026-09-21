@@ -4,6 +4,7 @@ data_extract.py — STFT perturbation sweep for partial mask geometry analysis.
 Always saves: original + FOC sigmoid probs, per-mask sigmoid probs + occ_fracs, samples.csv, summary.csv.
 Optional (all on by default): --no-layers, --no-attribution, --no-masks.
 Masks are deterministic and shared across fills.
+This script is the expensive GPU step before projection.py performs geometry on each mask.
 
 Usage:
     python data_extract.py <model_wrapper> <class_name> --wav-dir DIR --out-dir DIR [options]
@@ -85,13 +86,13 @@ def query_anchor(model, stft_helper, Zxx, target, fill_fn, stft_mask, save_layer
     Zxx_filled = fill_fn(Zxx, stft_mask) # apply fill if occluded
     log_mel = stft_helper.to_logmel(Zxx_filled) # convert to log mel spectrogram
     if save_layers:
-        preds, raw_acts = model.infer_all_layers_from_mel(log_mel[np.newaxis])         # full layer collection
+        preds, raw_acts = model.infer_all_layers_from_mel(log_mel[np.newaxis]) # full layer collection
         layer_acts = {k: v[0].astype(np.float32, copy=False)
-                      for k, v in raw_acts.items()}                                    # squeeze batch dim → (C,) per key; copy=False avoids redundant alloc when already float32
+                      for k, v in raw_acts.items()} # squeeze batch dim -> (C,) per key; copy=False avoids redundant alloc when already float32
     else:
-        preds, prob_vec = model.infer_sigmoid_from_mel(log_mel[np.newaxis])            # sigmoid only, no hidden states
+        preds, prob_vec = model.infer_sigmoid_from_mel(log_mel[np.newaxis]) # sigmoid only, no hidden states
         layer_acts = {"sigmoid": prob_vec[0].astype(np.float32, copy=False)}
-    conf = float(layer_acts["sigmoid"][model.class_to_idx[target]])                    # GT-class confidence scalar — direct index, no label scan
+    conf = float(layer_acts["sigmoid"][model.class_to_idx[target]]) # GT-class confidence scalar — direct index, no label scan
     return conf, layer_acts, preds[0]
 
 
@@ -102,20 +103,20 @@ def query_perturb(model, stft_helper, Zxx, target, fill_fn, stft_masks, save_lay
     Batched forward pass for one seed's masks (batch equivalent of query_anchor).
     stft_masks : (n_masks, F, T). Returns (confs (n_masks,), layer_acts {key: (n_masks, C)}).
     """
-    n_masks = stft_masks.shape[0]                                                           # batch size (equals module constant L at runtime)
+    n_masks = stft_masks.shape[0] # batch size (equals module constant L at runtime)
     M = stft_helper.n_mels
     _, T = Zxx.shape
-    log_mel_batch = np.empty((n_masks, M, T), dtype=np.float32)                             # pre-allocate; every row overwritten below — np.empty avoids wasted zero-fill
+    log_mel_batch = np.empty((n_masks, M, T), dtype=np.float32) # pre-allocate; every row overwritten below — np.empty avoids wasted zero-fill
     for i in range(n_masks):
-        log_mel_batch[i] = stft_helper.to_logmel(fill_fn(Zxx, stft_masks[i]))              # apply fill per mask → log mel
+        log_mel_batch[i] = stft_helper.to_logmel(fill_fn(Zxx, stft_masks[i])) # apply fill per mask -> log mel
     if save_layers:
-        _, raw_acts = model.infer_all_layers_from_mel(log_mel_batch)                        # full layer collection; preds unused (conf read from sigmoid)
+        _, raw_acts = model.infer_all_layers_from_mel(log_mel_batch) # full layer collection; preds unused (conf read from sigmoid)
         layer_acts = {k: v.astype(np.float32, copy=False)
-                      for k, v in raw_acts.items()}                                         # cast to float32; copy=False avoids redundant alloc when already float32
+                      for k, v in raw_acts.items()} # cast to float32; copy=False avoids redundant alloc when already float32
     else:
-        _, prob_vec = model.infer_sigmoid_from_mel(log_mel_batch)                           # sigmoid only, no layer hooks; preds unused
+        _, prob_vec = model.infer_sigmoid_from_mel(log_mel_batch) # sigmoid only, no layer hooks; preds unused
         layer_acts = {"sigmoid": prob_vec.astype(np.float32, copy=False)}
-    confs = layer_acts["sigmoid"][:, model.class_to_idx[target]]                            # GT-class scalar per mask — direct numpy index, no label scan
+    confs = layer_acts["sigmoid"][:, model.class_to_idx[target]] # GT-class scalar per mask — direct numpy index, no label scan
     return confs, layer_acts
 
 

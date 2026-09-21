@@ -1,10 +1,12 @@
+# Pipeline scripts (data_extract.py, projection.py)
 numpy
 scipy
 pandas
-matplotlib
 torch
 torchaudio
-transformers
 librosa
-numba
-jupyter
+transformers
+
+# Notebooks
+matplotlib
+jupyterlab
