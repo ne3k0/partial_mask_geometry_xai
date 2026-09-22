@@ -254,7 +254,7 @@ def process_clip(model, stft_helper, clip_path, out_dirs,
         )
         conf_foc[fill_name]  = conf_fo
         focc_top3[fill_name] = preds_fo[:3]
-        p = os.path.join(out_dirs["embs"], f"{clip_id}_foc_{fill_name}.npy")
+        p = os.path.join(out_dirs["embs"], f"{clip_id}_foc_sigmoid_{fill_name}.npy")
         np.save(p, foc_acts["sigmoid"])
         foc_sigmoid_paths[fill_name] = p
         if cfg["save_layers"]:
@@ -299,7 +299,7 @@ def process_clip(model, stft_helper, clip_path, out_dirs,
 
         # Flat sigmoid .npy — (9600, 527) float32, values in (0,1).
         # Notebooks apply v = ln(q/(1−q)) to enter logit space before decomposition.
-        perturb_npy_path = os.path.join(out_dirs["embs"], f"{clip_id}_perturb_{fill_name}.npy")
+        perturb_npy_path = os.path.join(out_dirs["embs"], f"{clip_id}_perturb_sigmoid_{fill_name}.npy")
         np.save(perturb_npy_path, all_layers["sigmoid"].astype(np.float32))
 
         summary_writer.writerow({
@@ -429,7 +429,7 @@ def main():
             for row in csv.DictReader(f):
                 cid, fill = row["clip_id"], row["fill"]
                 npz = os.path.join(embs_dir, f"{cid}_perturbations_{fill}.npz")
-                npy = os.path.join(embs_dir, f"{cid}_perturb_{fill}.npy")
+                npy = os.path.join(embs_dir, f"{cid}_perturb_sigmoid_{fill}.npy")
                 if (os.path.exists(npz) and os.path.getsize(npz) > 0
                         and os.path.exists(npy) and os.path.getsize(npy) > 0):
                     completed.add((cid, fill))

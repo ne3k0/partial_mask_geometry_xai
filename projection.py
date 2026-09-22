@@ -96,8 +96,8 @@ def _load_fill_legacy(embs_dir, clip_id, fill):
 
 def _load_fill_new(embs_dir, clip_id, fill):
     """Load FOC + perturbation data from new data_extract.py format."""
-    foc_p  = os.path.join(embs_dir, f"{clip_id}_foc_{fill}.npy")
-    per_p  = os.path.join(embs_dir, f"{clip_id}_perturb_{fill}.npy")
+    foc_p  = os.path.join(embs_dir, f"{clip_id}_foc_sigmoid_{fill}.npy")
+    per_p  = os.path.join(embs_dir, f"{clip_id}_perturb_sigmoid_{fill}.npy")
     pert_p = os.path.join(embs_dir, f"{clip_id}_perturbations_{fill}.npz")
     if not os.path.exists(foc_p) or not os.path.exists(per_p) or not os.path.exists(pert_p):
         return None
