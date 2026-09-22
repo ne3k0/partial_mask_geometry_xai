@@ -1,6 +1,6 @@
 # partial_mask_geometry_xai
 
-Logit-space trajectory analysis of audio classifiers under partial spectral masking. Companion code for [paper title].
+Logit-space trajectory decomposition of audio classifier outputs under partial time-frequency masking. Companion code for *Mask-Induced Displacement in Audio XAI via Logit Trajectory Decomposition*.
 
 ## Pipeline
 
@@ -10,9 +10,9 @@ data_extract.py  ->  projection.py  ->  notebooks/
 
 | Script | Role |
 |--------|------|
-| `data_extract.py` | GPU. Runs partial masks over eval clips; saves per-clip sigmoid outputs and masks. |
-| `projection.py` | CPU. Converts sigmoid outputs to logits, then decomposes each mask's displacement into on-axis (line from fully occluded to retained spectrogram) and off-axis components (orthognal to on-axis). |
-| `notebooks/` | Analysis and figures. Read projection outputs; no GPU required. |
+| `data_extract.py` | GPU. Generates partial time-frequency masks and runs model inference on each, saving sigmoid outputs and masks (optional: intermediate layer representations and attribution maps, not used in this paper). |
+| `projection.py` | CPU. Converts sigmoid probabilities to logits; decomposes each mask's displacement into on-axis (original -> fully occluded) and off-axis components. |
+| `notebooks/` | Analysis and figures. Reads projection outputs; no GPU required. |
 
 ## Setup
 
