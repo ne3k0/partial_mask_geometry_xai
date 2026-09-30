@@ -1,6 +1,8 @@
 # partial_mask_geometry_xai
 
-Logit-space trajectory decomposition of audio classifier outputs under partial masking. Companion code for *Mask-Induced Displacement in Audio XAI via Logit Trajectory Decomposition*.
+[![arXiv](https://img.shields.io/badge/arXiv-2609.33486-b31b1b.svg)](https://arxiv.org/abs/2609.33486)
+
+Logit-space trajectory decomposition of audio classifier outputs under partial masking.
 
 ## Pipeline
 
@@ -66,3 +68,17 @@ python projection.py --model ast_wrapper --class bagpipes --fills zero mean
 | `off_axis_direction.ipynb` | Covariance of off-axis vectors v_perp; eigenanalysis and participation ratio per (model, fill). |
 
 Set `DATA_ROOT`, `VP_ROOT`, and `OUTPUT_DIR` in cell 1 of each notebook before running.
+
+## Citation
+
+If you use this code, please cite:
+
+```bibtex
+@misc{garciapeguinho2026,
+  title         = {Mask-Induced Displacement in Audio {XAI} via Logit Trajectory Decomposition},
+  author        = {Nico Garc{\'i}a-Peguinho and David Kelly and Fabrizio Smeraldi and Anna Xamb{\'o} Sed{\'o}},
+  year          = {2026},
+  doi           = {10.48550/arXiv.2609.33486},
+  url           = {https://arxiv.org/abs/2609.33486}
+}
+```
