@@ -75,10 +75,10 @@ If you use this code, please cite:
 
 ```bibtex
 @misc{garciapeguinho2026,
-  title         = {Mask-Induced Displacement in Audio {XAI} via Logit Trajectory Decomposition},
-  author        = {Nico Garc{\'i}a-Peguinho and David Kelly and Fabrizio Smeraldi and Anna Xamb{\'o} Sed{\'o}},
-  year          = {2026},
-  doi           = {10.48550/arXiv.2609.33486},
-  url           = {https://arxiv.org/abs/2609.33486}
+  title = {Mask-Induced Displacement in Audio {XAI} via Logit Trajectory Decomposition},
+  author = {Nico Garc{\'i}a-Peguinho and David Kelly and Fabrizio Smeraldi and Anna Xamb{\'o} Sed{\'o}},
+  year = {2026},
+  doi = {10.48550/arXiv.2609.33486},
+  url = {https://arxiv.org/abs/2609.33486}
 }
 ```
